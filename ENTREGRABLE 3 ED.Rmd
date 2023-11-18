@@ -1,14 +1,20 @@
-
 ---
 title: "Entrega 3: Factores que influenciaron al voto por Pedro Castillo en segunda vuelta electoral en Perú"
 output: 
   flexdashboard::flex_dashboard:
     orientation: rows
 ---
+
 ```{r}
 library(flexdashboard)
 library(dygraphs)
 ```
+
+Exploración de la base
+===================================== 
+
+Row {data-height = 500} 
+-----------------------------------------------------------------------
 
 ### ENTREGA 3: Creación del dashboard o tablero de control.
 
@@ -20,23 +26,23 @@ El presente trabajo de análisis estadístico tiene como objetivo investigar una
 2. modelos de regresión/factorización
 3. modelos de clusterización
 
-```{r}
-library(flexdashboard)
-
-```
-
- Base unificada 
+### Estructura de la base unificada 
 
 ```{r}
 library(rio)
-midata=import("Base de datos_Unificada.xlsx")
+midata=import("https://github.com/ESTADISTICA-2-TRABAJO/ENTREGA-2-ARD-/raw/main/Base%20de%20datos_Unificada_.xlsx")
 str(midata)
 ```
 
-```{r}
+### Resumen de la base unificada 
 
+```{r}
 summary(midata)
 ```
+
+Row {data-height = 500}
+-----------------------------------------------------------------------
+
 ### Presentación de la base unificada
 
 ```{r echo=FALSE}
@@ -47,35 +53,38 @@ datatable(table, filter = "top")
 
 Por un lado, en esta presentación se observa las variables de análisis en donde destaca la variable VOTOS, la cual representa a los votos obtenidos por provincia, del candidato Pedro Castillo. Por otro lado, aparecen las variables independientes: POBLAXPOBRE, la cual hace referencia a la población en condición pobre extremo; POBLAPOBRE, la cual refiere a la población en condición pobre; IVIA, la cual refiere al índice de inseguridad alimentaria; IDE, la cual refiere a la densidad del Estado; POBLAOCU, la cual refiere a la población ocupada; y, finalmente, DEVENGADO, la cual tiene que ver con el presupuesto devengado por provincia. Además, se coloca dos variables potenciales que pueden funcionar como variables de control: POBLATOTAL (población total) y POBLA_80 (población mayor de 80 años).
 
+Exploración univariada y bivariada
+===================================== 
 
+Row {data-height=500} 
+-----------------------------------------------------------------------
 
-### Gráfica de descripción de la variable central 
+### Descripción de la variable dependiente
+
+Se observa que la concentración de votos a nivel provincial tiene un promedio bastante bajo. Sin embargo, se observa valores atípicos de mayor recurrencia en las grandes urbes: probablemente el valor atípico que se observa en la gráfica sea Lima por su densidad poblacional.
+
+### Gráfico de caja y bigotes para la variable dependiente
 
 ```{r}
 df2 <- midata[, c(3:11)]  
 row.names(df2)= midata$Provincia
-```
 
-```{r}
 library(ggplot2)
 
 ggplot(df2, aes(x = "", y = VOTOS)) +
   geom_boxplot(fill = "skyblue", color = "black") +
   ylim(0, 100000) +  # Establecer límites del eje y
-  labs(title = "Diagrama de Cajas: Votos a favor de Pedro Castillo en segunda vuelta (Variable Central)", x = "Categoría", y = "Valor")
-
+  labs(title = "Votos a favor de Pedro Castillo en segunda vuelta", x = "Categoría", y = "Valor")
 ```
 
+Row {data-height=500} 
+-----------------------------------------------------------------------
 
-Se observa que la concentración de votos a nivel provincial tiene un promedio bastante bajo. Sin embargo, se observa valores atípicos de mayor recurrencia en las grandes urbes: probablemente el valor atípico que se observa en la gráfica sea Lima por su densidad poblacional.
+### Descripción de las correlaciones
 
+Se observa una correlación bastante endeble en relación a algunas variables como POBLAPOBRE o POBLAXPOBRE, por ejemplo. Caso que puede contradecir ha algunas hipótesis que sostienen que las provincias más pobres votaron por el candidato Castillo.
 
-
-
-
-### Modelo de correlación entre la variable dependiente e independientes 
-
-Correlación entre variables 
+### Matriz de correlaciones
 
 ```{r}
 library(ggcorrplot)
@@ -84,35 +93,36 @@ numXs=df2[,colNums]
 ggcorrplot(cor(numXs),lab = T,show.diag = F)
 ```
 
+Modelos de regresión
+===================================== 
 
-Se observa una correlación bastante endeble en relación a algunas variables como POBLAPOBRE o POBLAXPOBRE, por ejemplo. Caso que puede contradecir ha algunas hipótesis que sostienen que las provincias más pobres votaron por el candidato Castillo.
+Row {data-height=200} 
+-----------------------------------------------------------------------
 
-- Modelo de regresión lineal múltiple (Gauss)
+### Modelo de regresión lineal múltiple (Gauss)
 
 Se opta por este modelo debido a que nuestra variable dependiente (VOTOS) ostenta un carácter numérico continuo. En esa línea, se plantearán tres modelos anidados que posteriormente serán comparados.
 
+Row {data-height=400} 
+-----------------------------------------------------------------------
+
 ### MODELO 1 
 
-Hipótesis: El número de votos a Pedro  Castillo se encuentra influenciado por la cantidad de población pobre en  cada provincia, controlado por la población total
-
-
 ```{r}
-modelo1=formula(VOTOS~POBLAPOBRE + POBLATOTAL)
-```
+modelo1 = formula(VOTOS~POBLAPOBRE + POBLATOTAL)
 
-```{r}
-reg1=lm(modelo1,data=midata)
-summary(reg1)
-```
+reg1 = lm(modelo1,data=midata)
 
-```{r}
 library(modelsummary)
-model1=list('apropiacion (I)'=reg1)
+model1 = list('apropiacion (I)'=reg1)
 modelsummary(model1, title = "Regresion: modelo 1",
              stars = TRUE,
              output = "kableExtra")
 ```
 
+### Interpretación del modelo 1
+
+Hipótesis: El número de votos a Pedro  Castillo se encuentra influenciado por la cantidad de población pobre en cada provincia, controlado por la población total
 
 Al probar esta hipótesis vemos…
 
@@ -122,23 +132,16 @@ Al probar esta hipótesis vemos…
 
 3. La variable POBLAPOBRE no es signficativa
 
+Row {data-height=400}
+-----------------------------------------------------------------------
 
 ### MODELO 2
 
-
-Hipotesis: El número de votos a Pedro  Castillo se encuentra influenciado por la cantidad de población pobre y el Índice de Vulnerabilidad a la Inseguridad Alimentaria en cada provincia, controlado por la población total.
-
-
 ```{r}
 modelo2=formula(VOTOS~POBLAPOBRE+IVIA + POBLATOTAL)
-```
 
-```{r}
 reg2=lm(modelo2,data=midata)
-summary(reg2)
-```
 
-```{r}
 library(modelsummary)
 model2=list('apropiacion (I)'=reg2)
 modelsummary(model2, title = "Regresion: modelo 2",
@@ -146,7 +149,9 @@ modelsummary(model2, title = "Regresion: modelo 2",
              output = "kableExtra")
 ```
 
+### Interpretación del modelo 2
 
+Hipotesis: El número de votos a Pedro  Castillo se encuentra influenciado por la cantidad de población pobre y el Índice de Vulnerabilidad a la Inseguridad Alimentaria en cada provincia, controlado por la población total.
 
 Concentràndonos en la variable IVIA al probar esta hipótesis vemos…
 
@@ -156,10 +161,13 @@ Concentràndonos en la variable IVIA al probar esta hipótesis vemos…
 
 3. La variable IVIA no es signficativa
 
+Modelos de regresión: Comparación
+===================================== 
 
+Row {data-height=600} 
+-----------------------------------------------------------------------
 
-
-### COMPARACIÓN DE MODELOS
+### Resumen de modelos
 
 ```{r}
 models=list('apropiacion (I)'=reg1,
@@ -169,39 +177,54 @@ modelsummary(models, title = "Resultados de todos los modelos",
              output = "kableExtra")
 ```
 
+### Comparación de efectos
+
 ```{r}
 library(ggplot2)
 library(sjPlot)
 
 
-plot_models(reg1,reg2,vline.color = "black",m.labels=c("Modelo 1","Modelo 2"),dot.size = 1,line.size = 0.6)
-
+plot_models(reg1,reg2,vline.color = "black", m.labels=c("Modelo 1","Modelo 2"),dot.size = 1,line.size = 0.6)
 ```
 
+Row {data-height=400} 
+-----------------------------------------------------------------------
 
+### Comparación modelos
 
 ```{r}
+library(kableExtra)
 library(magrittr)
 library(knitr)
 tanova=anova(reg1,reg2)
 
 kable(tanova,
-      caption = "Tabla ANOVA para comparar modelos")%>%kableExtra::kable_styling(full_width = FALSE)
+      caption = "Tabla ANOVA para comparar modelos")%>%kableExtra::kable_styling()
 ```
 
+### Anàlisis
 
+Es evidente que el modelo 2 es un mejor modelo que el modelo 1 con valor de AIC de 4496.2, el cual es menor al del otro modelo. Tambièn se constata que ambos modelos tienen  un buen rango de explicaciòn mayor al 95%, sin embargo, se observa que tanto la variable POBLAPOBRE como la variable IVIA, pese a ser variables de expliaciòn de ìndices de calidad de vida, no son significativas para los modelos. Esto contradice la hipòtesis general y al entendimiento general de la sociedad sobre la idea de que los votantes de Pedro Castillo pertenecen al grupo de personas con menor calidad de vida,
 
-Anàlisis: es evidente que el modelo 2 es un mejor modelo que el modelo 1 con valor de AIC de 4496.2, el cual es menor al del otro modelo. Tambièn se constata que ambos modelos tienen  un buen rango de explicaciòn mayor al 95%, sin embargo, se observa que tanto la variable POBLAPOBRE como la variable IVIA, pese a ser variables de expliaciòn de ìndices de calidad de vida, no son significativas para los modelos. Esto contradice la hipòtesis general y al entendimiento general de la sociedad sobre la idea de que los votantes de Pedro Castillo pertenecen al grupo de personas con menor calidad de vida,
-
-
--CONGLOMERADOS 
+Conglomerados
+===================================== 
 
 ```{r}
-cor(midata[,c(3:11)])
+#cor(midata[,c(3:11)])
 ```
 
 ```{r}
-dataClus=midata[,c(3:11)]
+#names(midata)
+```
+
+```{r}
+#library(ggcorrplot)
+#ggcorrplot(cor(midata[,c(6, 7, 8)]))
+```
+
+```{r}
+#falta estandarizar 
+dataClus=midata[,c(6, 7, 8)]
 row.names(dataClus)=midata$Provincia
 ```
 
@@ -210,9 +233,10 @@ library(cluster)
 g.dist = daisy(dataClus, metric="gower")
 ```
 
+Row {data-height= 300}
+-----------------------------------------------------------------------
 
-### PAM 
-Nùmero de clusters
+### PAM: Número de clusters
 
 ```{r}
 library(factoextra)
@@ -220,24 +244,20 @@ fviz_nbclust(dataClus, pam,diss=g.dist,method = "gap_stat",k.max = 10,verbose = 
 ```
 
 
-Se observa que el nùmero de clusters sugeridos para el anàlisis PAM es 1. Debido a que la clusterizaciòn no puede llevarse a cabo con un solo cluster, se emplearàn 3 como tentativa.
-
-- Clusterizaciòn PAM
 ```{r}
 library(kableExtra)
 set.seed(123)
-res.pam=pam(g.dist,3,cluster.only = F)
+res.pam=pam(g.dist,4,cluster.only = F)
 
 #nueva columna
 dataClus$pam=res.pam$cluster
 
 # ver
 
-head(dataClus,15)%>%kbl()%>%kable_styling()
+#head(dataClus,15)%>%kbl()%>%kable_styling()
 ```
 
-
-
+### PAM: Clusterizaciòn 
 
 ```{r}
 install.packages("factoextra")
@@ -245,28 +265,32 @@ library(factoextra)
 
 fviz_silhouette(res.pam, print.summary = FALSE)
 
-
-
 ```
-Provincias mal clusterizadas
+
 ```{r}
-silPAM=data.frame(res.pam$silinfo$widths)
+## Provincias mal clusterizadas
+silPAM=data.frame(res.pam$silinfo$heights)
 silPAM$country=row.names(silPAM)
-poorPAM=silPAM[silPAM$sil_width<0,'country']%>%sort()
-poorPAM
+poorPAM=silPAM[silPAM$sil_height<0,'country']%>%sort()
 ```
 
+Row {data-height= 20}
+-----------------------------------------------------------------------
 
-### AGNES
-Número de Clusters
+Se observa que el nùmero de clusters sugeridos para el anàlisis PAM es 1. Debido a que la clusterizaciòn no puede llevarse a cabo con un solo cluster, se emplearàn 3 como tentativa.
+
+Row {data-height= 300}
+-----------------------------------------------------------------------
+
+### AGNES: Número de clusters
 
 ```{r}
 fviz_nbclust(dataClus, hcut,diss=g.dist,method = "gap_stat",k.max = 10,verbose = F,hc_func = "agnes")
 ```
 
-
-
 La estrategia aglomerativa de Agnes sugiere, de nuevo, un cluster para el anàlisis. Esto no es posible de graficar por lo que se emplearà el siguiente mejor nùmero de clusters, es decir, 2.
+
+### AGNES: Dendograma
 
 ```{r}
 library(dplyr)
@@ -274,66 +298,76 @@ library(kableExtra)
 set.seed(123)
 library(factoextra)
 
-res.agnes<- hcut(g.dist, k = 2,hc_func='agnes',hc_method = "ward.D")
+res.agnes<- hcut(g.dist, k = 4,hc_func='agnes',hc_method = "ward.D")
 
 dataClus$agnes=res.agnes$cluster
 
 # ver
 
-head(dataClus,15)%>%kbl()%>%kable_styling()
+#head(dataClus,15)%>%kbl()%>%kable_styling()
 ```
-
-
 
 ```{r}
 # Visualize
 fviz_dend(res.agnes, cex = 0.7, horiz = T,main = "")
 ```
 
+### AGNES: Clusterización
+
 ```{r}
 fviz_silhouette(res.agnes,print.summary = F)
-
 ```
--Pronvincias mal clusterizadas
 
 ```{r}
-silAGNES=data.frame(res.agnes$silinfo$widths)
+#Pronvincias mal clusterizadas
+silAGNES=data.frame(res.agnes$silinfo$heights)
 silAGNES$country=row.names(silAGNES)
-poorAGNES=silAGNES[silAGNES$sil_width<0,'country']%>%sort()
-poorAGNES
+#poorAGNES=silAGNES[silAGNES$sil_height<0,'country']%>%sort()
+#poorAGNES
 ```
 
+Row {data-height= 20}
+-----------------------------------------------------------------------
 
+La estrategia aglomerativa de Agnes sugiere, de nuevo, un cluster para el anàlisis. Esto no es posible de graficar por lo que se emplearà el siguiente mejor nùmero de clusters, es decir, 2.
 
-### DIANA
+Row {data-height= 300}
+-----------------------------------------------------------------------
 
-Nùmero de clusters
+### DIANA: Número de clusters
 
 ```{r}
 fviz_nbclust(dataClus, hcut,diss=g.dist,method = "gap_stat",k.max = 10,verbose = F,hc_func = "diana")
-
 ```
 
-
-El nùmero de clsuters sugeridos por el algoritmo Diana es 1, sin embargo, no e sposible realizar el anàlisis de esa forma por lo que se tomarà en cuenta el siguiente mejor nùmero sugerido que es 3. 
-
-
-- Clusterizaciòn DIANA
+### DIANA: Dendograma
 
 ```{r}
 set.seed(123)
 res.diana <- hcut(g.dist, k = 3,hc_func='diana')
 dataClus$diana=res.diana$cluster
 # veamos
-head(dataClus,15)%>%kbl%>%kable_styling()
+#head(dataClus,15)%>%kbl%>%kable_styling()
 ```
 
 ```{r}
-fviz_silhouette(res.diana,print.summary = F)
-
+# Visualize
+fviz_dend(res.agnes, cex = 0.7, horiz = T,main = "")
 ```
 
+### DIANA: Clusterización
 
+```{r}
+fviz_silhouette(res.diana,print.summary = F)
+```
+
+Row {data-height= 20}
+-----------------------------------------------------------------------
+
+El nùmero de clsuters sugeridos por el algoritmo Diana es 1, sin embargo, no e sposible realizar el anàlisis de esa forma por lo que se tomarà en cuenta el siguiente mejor nùmero sugerido que es 3. 
+
+Row {data-height= 30}
+-----------------------------------------------------------------------
 
 Anàlisis: en definitiva, los datos presentados no son ùtiles o aptos para realizar un anàlisis de conglomerados ya que en todos los procesos de clusterizados el resultado es 1. Esto significa que las variables presentadas no pueden ser agrupadas en diversos clusters por su gran distancia y poca similitud. A pesar de ello, ignorando el nùmeros de clusters sugeridos en cada algoritmo, se realizò la clusterizaciòn y se obtuvo como mejor estrategia la de Pam ya que presenta menor nùmero de datos mal clusterizados.
 
