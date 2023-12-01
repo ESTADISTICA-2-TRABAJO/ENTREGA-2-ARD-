@@ -1,0 +1,388 @@
+---
+title: "Factores que influenciaron al voto por Pedro Castillo en segunda vuelta electoral en Perú"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+---
+
+```{r}
+library(flexdashboard)
+library(dygraphs)
+```
+
+Exploración
+===================================== 
+
+Row {data-height = 500} 
+-----------------------------------------------------------------------
+
+### ENTREGA 3: Creación del dashboard o tablero de control.
+
+El presente trabajo de análisis estadístico tiene como objetivo investigar una serie de variables que pueden explicar los factores de influencia en relación a la votación por el candidato Pedro Castillo de Perú Libre en la Segunda Vuelta Electoral de las últimas elecciones generales en Perú del 2021.
+
+- Grafica/tabla que describa la variable central
+- Grafica/tabla que describa la variable central y sus relaciones con las demas variables:
+1. modelos de asociación / correlación
+2. modelos de regresión/factorización
+3. modelos de clusterización
+
+### Estructura de la base unificada 
+
+```{r}
+library(rio)
+midata=import("https://github.com/ESTADISTICA-2-TRABAJO/ENTREGA-2-ARD-/raw/main/Base%20de%20datos_Unificada_.xlsx")
+str(midata)
+```
+
+### Resumen de la base unificada 
+
+```{r}
+summary(midata)
+```
+
+Row {data-height = 500}
+-----------------------------------------------------------------------
+
+### Presentación de la base unificada
+
+```{r echo=FALSE}
+library(DT)
+table = midata # Tabla de variables 
+datatable(table, filter = "top")
+```
+
+Por un lado, en esta presentación se observa las variables de análisis en donde destaca la variable VOTOS, la cual representa a los votos obtenidos por provincia, del candidato Pedro Castillo. Por otro lado, aparecen las variables independientes: POBLAXPOBRE, la cual hace referencia a la población en condición pobre extremo; POBLAPOBRE, la cual refiere a la población en condición pobre; IVIA, la cual refiere al índice de inseguridad alimentaria; IDE, la cual refiere a la densidad del Estado; POBLAOCU, la cual refiere a la población ocupada; y, finalmente, DEVENGADO, la cual tiene que ver con el presupuesto devengado por provincia. Además, se coloca dos variables potenciales que pueden funcionar como variables de control: POBLATOTAL (población total) y POBLA_80 (población mayor de 80 años).
+
+Exploración univariada y bivariada
+===================================== 
+
+Row {data-height=500} 
+-----------------------------------------------------------------------
+
+### Descripción de la variable dependiente
+
+Se observa que la concentración de votos a nivel provincial tiene un promedio bastante bajo. Sin embargo, se observa valores atípicos de mayor recurrencia en las grandes urbes: probablemente el valor atípico que se observa en la gráfica sea Lima por su densidad poblacional.
+
+### Gráfico de caja y bigotes para la variable dependiente
+
+```{r}
+df2 <- midata[, c(3:11)]  
+row.names(df2)= midata$Provincia
+
+library(ggplot2)
+
+ggplot(df2, aes(x = "", y = VOTOS)) +
+  geom_boxplot(fill = "skyblue", color = "black") +
+  ylim(0, 100000) +  # Establecer límites del eje y
+  labs(title = "Votos a favor de Pedro Castillo en segunda vuelta", x = "Categoría", y = "Valor")
+```
+
+Row {data-height=500} 
+-----------------------------------------------------------------------
+
+### Descripción de las correlaciones
+
+Se observa una correlación bastante endeble en relación a algunas variables como POBLAPOBRE o POBLAXPOBRE, por ejemplo. Caso que puede contradecir ha algunas hipótesis que sostienen que las provincias más pobres votaron por el candidato Castillo.
+
+### Matriz de correlaciones
+
+```{r}
+library(ggcorrplot)
+colNums=names(df2)
+numXs=df2[,colNums]
+ggcorrplot(cor(numXs),lab = T,show.diag = F)
+```
+
+Modelos de regresión
+===================================== 
+
+Row {data-height=200} 
+-----------------------------------------------------------------------
+
+### Modelo de regresión lineal múltiple (Gauss)
+
+Se opta por este modelo debido a que nuestra variable dependiente (VOTOS) ostenta un carácter numérico continuo. En esa línea, se plantearán tres modelos anidados que posteriormente serán comparados.
+
+Row {data-height=400} 
+-----------------------------------------------------------------------
+
+### MODELO 1 
+
+```{r}
+modelo1 = formula(VOTOS~POBLAPOBRE + POBLATOTAL)
+
+reg1 = lm(modelo1,data=midata)
+
+library(modelsummary)
+model1 = list('apropiacion (I)'=reg1)
+modelsummary(model1, title = "Regresion: modelo 1",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+### Interpretación del modelo 1
+
+Hipótesis: El número de votos a Pedro  Castillo se encuentra influenciado por la cantidad de población pobre en cada provincia, controlado por la población total
+
+Al probar esta hipótesis vemos…
+
+1.  La variable POBLAPOBRE tiene signo negativo, es decir, tiene una relaciòn inversa con la variable VOTOS.
+
+2. La magnitud del efecto de la variable POBLAPOBRE es de −211.157+ lo que indica cuànto varìa la variable dependiente cundo aumenta en una unidad controlado por la poblaciòn total.
+
+3. La variable POBLAPOBRE no es signficativa
+
+Row {data-height=400}
+-----------------------------------------------------------------------
+
+### MODELO 2
+
+```{r}
+modelo2=formula(VOTOS~POBLAPOBRE+IVIA + POBLATOTAL)
+
+reg2=lm(modelo2,data=midata)
+
+library(modelsummary)
+model2=list('apropiacion (I)'=reg2)
+modelsummary(model2, title = "Regresion: modelo 2",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+### Interpretación del modelo 2
+
+Hipotesis: El número de votos a Pedro  Castillo se encuentra influenciado por la cantidad de población pobre y el Índice de Vulnerabilidad a la Inseguridad Alimentaria en cada provincia, controlado por la población total.
+
+Concentràndonos en la variable IVIA al probar esta hipótesis vemos…
+
+1.  La variable IVIA tiene signo negativo, es decir, tiene una relaciòn inversa con la variable VOTOS.
+
+2. La magnitud del efecto de la variable IVIA es de −304.856 lo que indica cuànto varìa la variable dependiente cundo aumenta en una unidad controlado por la poblaciòn total.
+
+3. La variable IVIA no es signficativa
+
+Comparación de modelos
+===================================== 
+
+Row {data-height=600} 
+-----------------------------------------------------------------------
+
+### Resumen de modelos
+
+```{r}
+models=list('apropiacion (I)'=reg1,
+            'apropiacion (II)'=reg2)
+modelsummary(models, title = "Resultados de todos los modelos",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+### Comparación de efectos
+
+```{r}
+library(ggplot2)
+library(sjPlot)
+
+
+plot_models(reg1,reg2,vline.color = "black", m.labels=c("Modelo 1","Modelo 2"),dot.size = 1,line.size = 0.6)
+```
+
+Row {data-height=400} 
+-----------------------------------------------------------------------
+
+### Comparación modelos
+
+```{r}
+library(kableExtra)
+library(magrittr)
+library(knitr)
+tanova=anova(reg1,reg2)
+
+kable(tanova,
+      caption = "Tabla ANOVA para comparar modelos")%>%kableExtra::kable_styling()
+```
+
+### Anàlisis
+
+Es evidente que el modelo 2 es un mejor modelo que el modelo 1 con valor de AIC de 4496.2, el cual es menor al del otro modelo. Tambièn se constata que ambos modelos tienen  un buen rango de explicaciòn mayor al 95%, sin embargo, se observa que tanto la variable POBLAPOBRE como la variable IVIA, pese a ser variables de expliaciòn de ìndices de calidad de vida, no son significativas para los modelos. Esto contradice la hipòtesis general y al entendimiento general de la sociedad sobre la idea de que los votantes de Pedro Castillo pertenecen al grupo de personas con menor calidad de vida,
+
+Clusters: PAM
+===================================== 
+
+```{r}
+#cor(midata[,c(3:11)])
+```
+
+```{r}
+#names(midata)
+```
+
+```{r}
+#library(ggcorrplot)
+#ggcorrplot(cor(midata[,c(6, 7, 8)]))
+```
+
+```{r, echo = FALSE}
+#falta estandarizar 
+dataClus=midata[,c(6, 7, 8)]
+row.names(dataClus)=midata$Provincia
+```
+
+```{r, echo = FALSE}
+library(cluster)
+g.dist = daisy(dataClus, metric="gower")
+```
+
+Row {data-height=800}
+-----------------------------------------------------------------------
+
+### PAM: Número de clusters
+
+```{r}
+library(factoextra)
+fviz_nbclust(dataClus, pam,diss=g.dist,method = "gap_stat",k.max = 10,verbose = F)
+```
+
+```{r}
+library(kableExtra)
+set.seed(123)
+res.pam=pam(g.dist,4,cluster.only = F)
+
+#nueva columna
+dataClus$pam=res.pam$cluster
+
+# ver
+
+#head(dataClus,15)%>%kbl()%>%kable_styling()
+```
+
+### PAM: Clusterizaciòn 
+
+```{r}
+fviz_silhouette(res.pam, print.summary = FALSE)
+
+```
+
+### Provincias mal clusterizadas
+
+```{r}
+silPAM=data.frame(res.pam$silinfo$widths)
+silPAM$Provincia=row.names(silPAM)
+poorPAM=silPAM[silPAM$sil_width<0,'Provincia']%>%sort()
+poorPAM
+```
+
+Row {data-height=200}
+-----------------------------------------------------------------------
+
+Se observa que el nùmero de clusters sugeridos para el anàlisis PAM son 4. En ese sentido, el algoritmo detecta que puede haber cuatro formas de agrupación porque encuentra mayor similitud o menor distancia entre las variables independientes. 
+
+
+Clusters: AGNES
+===================================== 
+
+Row {data-height=800} 
+-----------------------------------------------------------------------
+
+### AGNES: Número de clusters
+
+```{r}
+fviz_nbclust(dataClus, hcut,diss=g.dist,method = "gap_stat",k.max = 10,verbose = F,hc_func = "agnes")
+```
+
+
+
+```{r, echo=FALSE}
+library(dplyr)
+library(kableExtra)
+set.seed(123)
+library(factoextra)
+
+res.agnes<- hcut(g.dist, k = 4,hc_func='agnes',hc_method = "ward.D")
+
+dataClus$agnes=res.agnes$cluster
+
+# ver
+
+#head(dataClus,15)%>%kbl()%>%kable_styling()
+```
+
+
+### AGNES: Clusterización
+
+```{r}
+fviz_silhouette(res.agnes,print.summary = F)
+```
+
+
+### Provincias mal clusterizadas
+
+```{r}
+silAGNES=data.frame(res.agnes$silinfo$widths)
+silAGNES$Provincia=row.names(silAGNES)
+poorAGNES=silAGNES[silAGNES$sil_width<0,'Provincia']%>%sort()
+poorAGNES
+```
+
+Row {data-height=50} 
+-----------------------------------------------------------------------
+
+La estrategia aglomerativa de Agnes sugiere, de nuevo, 4 clusters para el anàlisis. En ese sentido, el algoritmo detecta que puede haber cuatro formas de agrupación porque encuentra mayor similitud o menor distancia entre las variables independientes.
+
+
+Clusters: DIANA
+===================================== 
+
+Row {data-height=800}
+-----------------------------------------------------------------------
+
+### DIANA: Número de clusters
+
+```{r}
+fviz_nbclust(dataClus, hcut,diss=g.dist,method = "gap_stat",k.max = 10,verbose = F,hc_func = "diana")
+```
+
+
+
+```{r}
+set.seed(123)
+res.diana <- hcut(g.dist, k = 3,hc_func='diana')
+dataClus$diana=res.diana$cluster
+# veamos
+#head(dataClus,15)%>%kbl%>%kable_styling()
+```
+
+
+
+### DIANA: Clusterización
+
+```{r}
+fviz_silhouette(res.diana,print.summary = F)
+```
+
+
+### Provincias mal clusterizadas
+
+```{r}
+silDIANA=data.frame(res.diana$silinfo$widths)
+silDIANA$Provincia=row.names(silDIANA)
+poorDIANA=silDIANA[silDIANA$sil_width<0,'Provincia']%>%sort()
+poorDIANA
+```
+
+Row {data-height=50}
+-----------------------------------------------------------------------
+
+El nùmero de clsuters sugeridos por el algoritmo Diana es 3. En ese sentido, el algoritmo detecta que puede haber tres formas de agrupación porque encuentra mayor similitud o menor distancia entre las variables independientes. Cabe señalar que este modelo visualmente sugiere una mejor clusterización.
+
+
+Row {data-height=50}
+-----------------------------------------------------------------------
+
+Análisis: En general nuestras variables independientes son óptimas para realizar un proceso de clusterización. En esa línea, se constata que el mejor método para la agrupación de datos es Diana porque presenta un proceso acotado en 3 clusters y, además, presenta menores valores perdidos. Lo más importante para decantarnos por Diana es el valor del average silhouette (0.39) el cual es mayor que en los demás métodos. Según nuestro análisis el único error o provincia mal clusterizada con Diana sería la provincia 9, la cual es Cajamarca. 
+
+
+
+
+
+
